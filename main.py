@@ -15,7 +15,7 @@ def index():
 register_tortoise(
     app,
     db_url='sqlite://database.sqlite3',
-    models={'models': ['models']},
+    modules={'models': ['db_models']},
     generate_schemas=True,
     add_exception_handlers=True,
 )

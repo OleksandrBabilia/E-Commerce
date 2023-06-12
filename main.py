@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.templating import Jinja2Templates
 
 from starlette.responses import HTMLResponse
@@ -29,7 +29,17 @@ async def email_verification(request: Request, token: str):
     if user and not user.is_verified:
         user.is_verified = True
         await user.save()
-        return 
+        return templates.TemplateResponse(
+            'verification.html', 
+            {'request': request,
+             'username': user.username},
+        )
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Invalid token',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+        
 
 @post_save(User)
 async def create_business(

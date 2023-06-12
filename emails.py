@@ -1,16 +1,15 @@
 from fastapi import (
     BackgroundTasks,
-    UploadFileTask,
     File,
     Form,
     Depends,
     HTTPException,
-    status_code
+    status
 )
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import BaseModel, EmailStr
 from typing import List
-from .db_models import User
+from db_models import User
 import jwt
 
 from dotenv import dotenv_values
@@ -23,8 +22,8 @@ conf = ConnectionConfig(
     MAIL_FROM=config_credentials['EMAIL'],
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
-    MAIL_TLS=True,
-    MAIL_SSL=False,
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
 )
     
@@ -33,7 +32,7 @@ async def send_email(email: List, instance: User):
         'id': instance.id,
         'username': instance.username,
     }
-    token = jwt.encode(token_data, config_credentials['SECRET_KEY'], algorithm='HS256')
+    token = jwt.encode(token_data, config_credentials['SECRET'], algorithm='HS256')
     template = f"""
         <!DOCTYPE html>
         <html>

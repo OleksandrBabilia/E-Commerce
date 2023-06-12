@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
+
+from starlette.responses import HTMLResponse
 
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.signals import post_save
@@ -13,9 +16,20 @@ from pydentic_models import (
     user_pydentic,
     business_pydentic,
 )
-from authentication import get_hashed_password
+from authentication import get_hashed_password, verify_token
 
 app = FastAPI()
+
+templates = Jinja2Templates(directory='templates')
+
+@app.get('verification/', response_class=HTMLResponse)
+async def email_verification(request: Request, token: str):
+    user = await verify_token(token)
+    
+    if user and not user.is_verified:
+        user.is_verified = True
+        await user.save()
+        return 
 
 @post_save(User)
 async def create_business(

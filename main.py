@@ -9,6 +9,7 @@ from tortoise import BaseDBAsyncClient
 
 from typing import Optional, Type, List
 
+from emails import * 
 from db_models import User, Business, Product
 from pydentic_models import (
     user_pydenticIn,
@@ -56,7 +57,7 @@ async def create_business(
         )
         
         await business_pydentic.from_tortoise_orm(business_obj)
-        
+        await send_email([instance.email], instance)
 
 @app.post('/registration')
 async def user_registration(user: user_pydenticIn):

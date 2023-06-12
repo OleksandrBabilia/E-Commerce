@@ -27,17 +27,13 @@ conf = ConnectionConfig(
     MAIL_SSL=False,
     USE_CREDENTIALS=True,
 )
-
-
-class EmailSchema(BaseModel):
-    email: List[EmailStr]
     
-async def send_email(email: EmailSchema, instance: User):
+async def send_email(email: List, instance: User):
     token_data = {
         'id': instance.id,
         'username': instance.username,
     }
-    token = jwt.encode(token_data, config_credentials['SECRET_KEY'])
+    token = jwt.encode(token_data, config_credentials['SECRET_KEY'], algorithm='HS256')
     template = f"""
         <!DOCTYPE html>
         <html>

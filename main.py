@@ -18,7 +18,7 @@ from pydentic_models import (
     user_pydentic,
     business_pydentic,
 )
-from authentication import get_hashed_password, verify_token
+from authentication import get_hashed_password, verify_token, token_generator
 
 app = FastAPI()
 
@@ -27,8 +27,33 @@ templates = Jinja2Templates(directory='templates')
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 async def get_current_user(token: str=Depends(oauth2_scheme)):
-    return {'token': 'user_token'}
+    try:
+        payload = jwt.decode(token, config_credentials['SECRET'], algorithms=['HS256'])
+        user = await User.get(id=payload.get('id'))
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Invalid token',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+        
+    return await user
 
+@app.post('/user/me')
+async def user_login(user: user_pydenticIn=Depends(get_current_user)):
+    business = await Business.get(owner=user)
+
+    return {
+        'status': 'OK',
+        'data': {
+            'username': user.username,
+            'email': user.email,
+            'verified': user.is_verified,
+            'joined_date': user.join_date.strtime('%d %b %Y')
+        }
+    }
+    
+    
 @app.post('/token')
 async def generate_token(request_form: OAuth2PasswordRequestForm = Depends()):
     token = await token_generator(request_form.username, request_form.password)

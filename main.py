@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Depends
 from fastapi.templating import Jinja2Templates
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from starlette.responses import HTMLResponse
 
@@ -23,6 +24,17 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory='templates')
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+
+async def get_current_user(token: str=Depends(oauth2_scheme)):
+    return {'token': 'user_token'}
+
+@app.post('/token')
+async def generate_token(request_form: OAuth2PasswordRequestForm = Depends()):
+    token = await token_generator(request_form.username, request_form.password)
+    return {'access_token': token,
+            'token_type': 'bearer'}
+
 @app.get('verification/', response_class=HTMLResponse)
 async def email_verification(request: Request, token: str):
     user = await verify_token(token)
@@ -39,17 +51,11 @@ async def email_verification(request: Request, token: str):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Invalid token',
             headers={'WWW-Authenticate': 'Bearer'}
-        )
+    )
         
-
 @post_save(User)
-async def create_business(
-    sender: 'Type[User]', 
-    instance: User, 
-    created:bool, 
-    using_db: 'Optional[BaseDBAsyncClient]',
-    updated_fields: List[str]
-)->None :
+async def create_business(sender: 'Type[User]', instance: User, created:bool, 
+    using_db: 'Optional[BaseDBAsyncClient]', updated_fields: List[str]) -> None :
     if created:
         business_obj = await Business.create(
             name=instance.username, 
@@ -69,8 +75,6 @@ async def user_registration(user: user_pydenticIn):
         'status': 'OK',
         'data': f'Hello, {new_user.username}, thanks for your registration,  check your email'
     }
-
-
 
 @app.get('/')
 def index():

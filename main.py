@@ -112,7 +112,7 @@ async def user_registration(user: user_pydenticIn):
 def index():
     return {'Message': 'Hello World!'}
 
-@app.post('uploadfile/profile')
+@app.post('/uploadfile/profile')
 async def create_upload_file(file: UploadFile=File(...), user: user_pydentic=Depends(get_current_user)):
     FILEPATH = './static/images/'
     filename = file.filename
@@ -150,6 +150,13 @@ async def create_upload_file(file: UploadFile=File(...), user: user_pydentic=Dep
             detail='Not Authenticated to perform this action',
             headers={'WWW-Authenticate': 'Bearer'}
         )
+    
+    file_url = 'localhost:8000' + generated_name[1:]
+    
+    return {
+        'status': 'OK',
+        'filename': file_url
+    }
         
 
 register_tortoise(

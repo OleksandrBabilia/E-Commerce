@@ -98,7 +98,25 @@ async def get_product(id: int):
                 },
             } 
         }
-   
+
+@app.delete('/products/{id}')
+async def delete_product(id: int, user: user_pydentic=Depends(get_current_user)):
+    product = await Product.get(id=id)
+    business = await product.business
+    owner = await business.owner
+    
+    if user == owner:
+        product.delete()
+        return {
+            'status': 'OK'
+        }
+        
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Invalid token',
+        headers={'WWW-Authenticate': 'Bearer'}
+    )
+
 @app.post('/user/me')
 async def user_login(user: user_pydenticIn=Depends(get_current_user)):
     business = await Business.get(owner=user)

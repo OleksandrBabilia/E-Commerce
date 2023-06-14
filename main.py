@@ -19,9 +19,10 @@ from emails import *
 from db_models import User, Business, Product
 from pydentic_models import (
     user_pydenticIn,
-    user_pydenticOut,
     user_pydentic,
     business_pydentic,
+    product_pydenticIn,
+    product_pydentic
 )
 from authentication import get_hashed_password, verify_token, token_generator
 
@@ -46,20 +47,42 @@ async def get_current_user(token: str=Depends(oauth2_scheme)):
         
     return await user
 
+@app.post('/products')
+async def get_products(product: product_pydenticIn, user: user_pydentic=Depends(get_current_user)):
+    product = product.dict(exclude_unset=True)
+    
+    if product['original_price'] > 0:
+        product['percentage_discount'] = ((product['original_price'] - product['new_price']) / product['original_price']) * 100
+
+        product_obj = await Product.create(**product, business=user)
+        product_obj = await product_pydenticIn.from_tortoise_orm(product_obj)
+        
+        return {
+            'status': 'OK',
+            'data': product_obj
+        }
+    else:
+        return {
+            'status': 'ERROR'
+        }
+        
+        
 @app.post('/user/me')
 async def user_login(user: user_pydenticIn=Depends(get_current_user)):
     business = await Business.get(owner=user)
-
+    logo = business.logo
+    logo_path = 'localhost:8000/static/images/' + logo
+    
     return {
         'status': 'OK',
         'data': {
             'username': user.username,
             'email': user.email,
             'verified': user.is_verified,
-            'joined_date': user.join_date.strtime('%d %b %Y')
+            'joined_date': user.join_date.strtime('%d %b %Y'),
+            'logo': logo_path
         }
     }
-    
     
 @app.post('/token')
 async def generate_token(request_form: OAuth2PasswordRequestForm = Depends()):

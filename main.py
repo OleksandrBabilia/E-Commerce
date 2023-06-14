@@ -80,7 +80,7 @@ async def get_product(id: int):
     business = await product.business
     owner = await business.owner
     
-    response = await product_pydentic.from_queryset_single(product)
+    response = await product_pydentic.from_queryset_single(Product.get(id=id))
     
     return {
             'status': 'OK',

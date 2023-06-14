@@ -14,6 +14,7 @@ from typing import Optional, Type, List
 from PIL import Image
 
 import secrets
+from datetime import datetime
 
 from emails import * 
 from db_models import User, Business, Product
@@ -21,6 +22,7 @@ from pydentic_models import (
     user_pydenticIn,
     user_pydentic,
     business_pydentic,
+    business_pydenticIn,
     product_pydenticIn,
     product_pydentic
 )
@@ -279,7 +281,55 @@ async def create_upload_file(id: int, file: UploadFile=File(...),
         'filename': file_url
     }
     
+@app.put('/product/{id}')
+async def update_product(id: int, update_info: product_pydenticIn, user: user_pydentic=Depends(get_current_user)): 
+    product = await Product.get(id=id)
+    business = await product.business
+    owner = await business.owner
 
+    update_info = update_info.dict(exclude_unset=True)
+    update_info['date_published'] = datetime.utcnow()
+    
+    if owner == user and update_info['original_price'] >= 0:
+        update_info['percentage_discount'] = ((update_info['original_price'] - update_info['new_price']) / update_info['original_price']) * 100
+        
+        product = await product.update_from_dict(update_info)
+        await product.save()
+        response = await product_pydentic.from_tortoise_orm(product)
+        
+        return {
+            'status': 'OK',
+            'data': response
+        }
+    
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Not Authenticated to perform this action',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+    
+@app.put('/business/{id}')
+async def update_business(id: int, update_business: business_pydenticIn, user: user_pydentic=Depends(get_current_user)):
+    update_business = update_business.dict()
+    business = await Business.get(id=id)
+    owner = await business.owner 
+    
+    if user == owner:
+        await business.update_from_dict(update_business)
+        await business.save()
+        response = await business_pydentic.from_tortoise_orm(business)
+        
+        return {
+            'status': 'OK',
+            'data': response
+        }
+        
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Not Authenticated to perform this action',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+    
 register_tortoise(
     app,
     db_url='sqlite://database.sqlite3',

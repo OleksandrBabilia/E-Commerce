@@ -30,6 +30,7 @@ class Product(Model):
     new_price = fields.DecimalField(max_digits=12, decimal_places=2)
     percentage_discount = fields.IntField()
     offer_expiration_date = fields.DateField(default=datetime.utcnow)
-    product_image = fields.CharField(max_length=200, null=False, default="product_default.jpg")
+    image = fields.CharField(max_length=200, null=False, default="product_default.jpg")
     business = fields.ForeignKeyField('models.Business', related_name='products')
+    date_published = fields.DatetimeField(default=datetime.utcnow)
     

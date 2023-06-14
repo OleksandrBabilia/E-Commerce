@@ -7,7 +7,7 @@ user_pydenticIn = pydantic_model_creator(User, name='UserIn', exclude_readonly=T
 user_pydenticOut = pydantic_model_creator(User, name='UserOut', exclude=('password', ))
 
 business_pydentic = pydantic_model_creator(Business, name='Business')
-business_pydenticIn = pydantic_model_creator(Business, name='BusinessIn', exclude_readonly=True)
+business_pydenticIn = pydantic_model_creator(Business, name='BusinessIn', exclude=('logo', 'id', ))
 
 product_pydentic = pydantic_model_creator(Product, name='Product')
-product_pydenticIn = pydantic_model_creator(Product, name='ProductIn', exclude=('percentage_discount', 'id', ))
+product_pydenticIn = pydantic_model_creator(Product, name='ProductIn', exclude=('percentage_discount', 'id', 'image', 'date_published'))

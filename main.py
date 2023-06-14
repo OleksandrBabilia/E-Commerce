@@ -73,6 +73,32 @@ async def get_product():
             'status': 'OK',
             'data': response
         }
+
+@app.get('/products/{id}')
+async def get_product(id: int):
+    product = await Product.get(id=id)
+    business = await product.business
+    owner = await business.owner
+    
+    response = await product_pydentic.from_queryset_single(product)
+    
+    return {
+            'status': 'OK',
+            'data': {
+                'product_details': product,
+                'business_details': {
+                    'name': business.name,
+                    'city': business.city,
+                    'region': business.region,
+                    'description': business.description,
+                    'logo': business.logo,
+                    'owner_id': owner.id,
+                    'email': owner.email,
+                    'join_date': owner.join_date.strtime('%b %d %Y'),
+                },
+            } 
+        }
+   
 @app.post('/user/me')
 async def user_login(user: user_pydenticIn=Depends(get_current_user)):
     business = await Business.get(owner=user)
@@ -85,7 +111,7 @@ async def user_login(user: user_pydenticIn=Depends(get_current_user)):
             'username': user.username,
             'email': user.email,
             'verified': user.is_verified,
-            'joined_date': user.join_date.strtime('%d %b %Y'),
+            'join_date': user.join_date.strtime('%b %d %Y'),
             'logo': logo_path
         }
     }

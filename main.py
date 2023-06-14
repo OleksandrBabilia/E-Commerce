@@ -66,7 +66,13 @@ async def get_products(product: product_pydenticIn, user: user_pydentic=Depends(
             'status': 'ERROR'
         }
         
-        
+@app.get('/products')
+async def get_product():
+    response = await product_pydentic.from_tortoise_orm(Product.all())
+    return {
+            'status': 'OK',
+            'data': response
+        }
 @app.post('/user/me')
 async def user_login(user: user_pydenticIn=Depends(get_current_user)):
     business = await Business.get(owner=user)

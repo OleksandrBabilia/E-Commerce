@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request, HTTPException, status, Depends
+from fastapi import FastAPI, Request, HTTPException, status, Depends ,File, UploadFile
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 
 from starlette.responses import HTMLResponse
 
@@ -9,6 +10,10 @@ from tortoise.signals import post_save
 from tortoise import BaseDBAsyncClient
 
 from typing import Optional, Type, List
+
+from PIL import Image
+
+import secrets
 
 from emails import * 
 from db_models import User, Business, Product
@@ -25,6 +30,8 @@ app = FastAPI()
 templates = Jinja2Templates(directory='templates')
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+
+app.mount('/static', StaticFiles(directory='static'), name='static')
 
 async def get_current_user(token: str=Depends(oauth2_scheme)):
     try:
@@ -104,6 +111,46 @@ async def user_registration(user: user_pydenticIn):
 @app.get('/')
 def index():
     return {'Message': 'Hello World!'}
+
+@app.post('uploadfile/profile')
+async def create_upload_file(file: UploadFile=File(...), user: user_pydentic=Depends(get_current_user)):
+    FILEPATH = './static/images/'
+    filename = file.filename
+    extension = filename.split('.')[1]
+    
+    if extension not in ['jpg', 'png']:
+        return {
+            'status': 'ERROR',
+            'detail': 'File extension not allowed'
+        }
+        
+    token_name = f'{secrets.token_hex(10)}.{extension}'
+    generated_name = FILEPATH + token_name
+    file_content = await file.read()
+    
+    with open(generated_name, 'wb') as file:
+        file.write(file_content)
+        
+    img = Image.open(generated_name)
+    img = img.resize(size=(200, 200))
+    img.save(generated_name)
+    
+    file.close()
+    
+    business = await Business.get(owner=user)
+    owner = await business.owner
+    
+    if owner == user:
+        business.logo = token_name
+        await business.save()
+        
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Not Authenticated to perform this action',
+            headers={'WWW-Authenticate': 'Bearer'}
+        )
+        
 
 register_tortoise(
     app,

@@ -1,13 +1,4 @@
-from fastapi import (
-    BackgroundTasks,
-    File,
-    Form,
-    Depends,
-    HTTPException,
-    status
-)
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic import BaseModel, EmailStr
 from typing import List
 from db_models import User
 import jwt

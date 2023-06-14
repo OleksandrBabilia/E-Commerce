@@ -1,5 +1,4 @@
 from tortoise import Model, fields
-from pydantic import BaseModel
 
 from datetime import datetime
 

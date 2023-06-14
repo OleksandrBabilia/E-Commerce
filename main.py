@@ -68,7 +68,7 @@ async def get_products(product: product_pydenticIn, user: user_pydentic=Depends(
         
 @app.get('/products')
 async def get_product():
-    response = await product_pydentic.from_tortoise_orm(Product.all())
+    response = await product_pydentic.from_queryset(Product.all())
     return {
             'status': 'OK',
             'data': response
